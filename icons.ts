@@ -1,0 +1,29 @@
+import {
+  Hospital,
+  GitCompare,
+  ArrowRightLeft,
+  LucideArrowDownZa,
+  Plus as add,
+  Search,
+  Bell,
+  HelpCircle,
+  Edit as edit,
+  Trash as deleteIcon,
+  ArrowLeftIcon,
+  ArrowDown
+
+} from "lucide-react";
+
+export const Icons = {
+  faskes: Hospital,
+  compare: GitCompare,
+  migration: ArrowRightLeft,
+  dropdown: ArrowDown,
+  add: add,
+  search: Search,
+  bell: Bell,
+  help: HelpCircle,
+  edit: edit,
+  delete: deleteIcon,
+  arrow_left: ArrowLeftIcon,
+};
