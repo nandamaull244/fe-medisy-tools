@@ -8,9 +8,10 @@ import Switch from "@/components/ui/Switch";
 type Props = {
     onSubmit: (data: any) => void;
     defaultValues?: any;
+    loading?: boolean;
 };
 
-export default function FaskesForm({ onSubmit, defaultValues }: Props) {
+export default function FaskesForm({ onSubmit, defaultValues, loading }: Props) {
     const [form, setForm] = useState({
     name: defaultValues?.name || "",
     domain: defaultValues?.domain || "",
@@ -97,7 +98,7 @@ return (
 
         {/* Submit */}
         <div className="pt-6 justify-self-end">
-            <Button label="Create faskes" type="submit" />
+            <Button label="Create faskes" type="submit" disabled={loading} />
         </div>
 
     </form>
