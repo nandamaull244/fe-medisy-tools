@@ -38,7 +38,9 @@ export default function FaskesDetail({ data }: any) {
 
           <div>
             <p className="text-sm text-text-light">Password</p>
-            <p className="font-medium">••••••••</p>
+            <p className="font-medium">
+              {data.password ? data.password : "Tidak ada password"}
+            </p>
           </div>
         </div>
       </div>

@@ -1,17 +1,48 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import { getFaskes } from "@/services/faskes.service";
 import Table from "@/components/ui/Table";
-import { access } from "fs";
 import { Icons } from "@/icons";
+import { access } from "fs";
 
 
-export default function Home() {
-    const data = [
-    { id: 1, name: "Klinik A", domain: "a.medisy.id", db_name: "klinik_a", created_at: "2023-01-01" },
-    { id: 2, name: "Klinik B", domain: "b.medisy.id", db_name: "klinik_b", created_at: "2023-01-02" },
-    { id: 3, name: "Klinik C", domain: "c.medisy.id", db_name: "klinik_c", created_at: "2023-01-03" },
-  ];
+export default function FaskesPage() {
+  const [data, setData] = useState([]);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
 
-  const columns = [
+
+  const [debounced, setDebounced] = useState(search);
+
+  
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebounced(search);
+    }, 500);
+
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // fetch API
+  useEffect(() => {
+    getFaskes({
+      page,
+      size: 10,
+      order_by: "created_at",
+      order: "desc",
+      name: debounced,
+    }).then(setData);
+  }, [page, debounced]);
+
+
+    const columns = [
+    {
+      accessorKey: "id",
+      header: "ID",
+      cell: ({ row }: any) => (page - 1) * 10 + row.index + 1,
+    },
     {
       accessorKey: "name",
       header: "Nama",
@@ -21,7 +52,7 @@ export default function Home() {
       header: "Domain",
     },
     {
-      accessorKey: "db_name",
+      accessorKey: "dbname",
       header: "DB Name",
     },
     {
@@ -29,26 +60,41 @@ export default function Home() {
       header: "Created At",
     },
     {
-      accessorKey: "id",
+      accessorKey: "action",
       header: "Action",
       cell: ({ row }: any) => (
-        <div className="flex gap-2">
-          <button className="text-success font-medium">
-            <Icons.search size={18} />
-          </button>
-          <button className="text-red-500 font-medium">
-            <Icons.delete size={18} />
-          </button>
-        </div>
+      <div className="flex items-center">
+        <a href={`/faskes/${row.original.id}`} className="text-success hover:text-green-800">
+        <Icons.search size={18} />
+        </a>
+
+      </div>
       ),
     },
-  ];
+    ];
+
   return (
-    <div className="w-full h-full bg-white rounded-xl shadow-sm p-4">
-      <h3 className="text-xl font-semibold mb-4">List Faskes</h3>
-      <div>
-        <Table columns={columns} data={data} />
-      </div>
+    <div className="space-y-4">
+
+      {/* 🔍 SEARCH */}
+      <input
+        type="text"
+        placeholder="Cari faskes..."
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1); // reset page
+        }}
+        className="border px-3 py-2 rounded-lg text-sm w-64"
+      />
+
+      {/*TABLE */}
+      <Table
+        columns={columns}
+        data={data}
+        page={page}
+        setPage={setPage}
+      />
     </div>
   );
 }

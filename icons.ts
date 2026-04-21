@@ -10,7 +10,9 @@ import {
   Edit as edit,
   Trash as deleteIcon,
   ArrowLeftIcon,
-  ArrowDown
+  ArrowDown,
+  XCircle,
+  CheckCircle2Icon
 
 } from "lucide-react";
 
@@ -26,4 +28,6 @@ export const Icons = {
   edit: edit,
   delete: deleteIcon,
   arrow_left: ArrowLeftIcon,
+  close: XCircle,
+  check: CheckCircle2Icon,
 };
