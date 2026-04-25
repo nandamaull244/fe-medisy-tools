@@ -71,15 +71,12 @@ export default function MigrationPage() {
 
   const toggleSelect = (id: number) => {
     setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
   return (
     <div className="space-y-6 w-full h-full bg-white rounded-xl shadow-sm p-4">
-
       {/* HEADER */}
       <div>
         <h1 className="text-xl font-semibold">Migration</h1>
@@ -100,10 +97,13 @@ export default function MigrationPage() {
           }}
         />
 
-        <Button
-          label={status === "loading" ? "Loading..." : "Pilih"}
+        <button
+          className="bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark"
           onClick={handleLoad}
-        />
+          disabled={status === "loading"}
+        >
+          {status === "loading" ? "Loading..." : "Pilih"}
+        </button>
       </div>
 
       {/* ========================= */}
@@ -119,24 +119,18 @@ export default function MigrationPage() {
 
       {/* LOADING */}
       {status === "loading" && (
-        <div className="text-text-light">
-          Memuat data migration...
-        </div>
+        <div className="text-text-light">Memuat data migration...</div>
       )}
 
       {/* EMPTY */}
       {status === "empty" && (
-        <div className="text-center text-text-light">
-          no data available yet
-        </div>
+        <div className="text-center text-text-light">no data available yet</div>
       )}
 
       {/* ERROR */}
       {status === "error" && (
         <div className="bg-white p-6 rounded-xl shadow-sm text-center">
-          <p className="text-red-500 mb-3">
-            Data gagal compare
-          </p>
+          <p className="text-red-500 mb-3">Data gagal compare</p>
 
           <Button label="Coba Lagi" onClick={handleLoad} />
         </div>
@@ -145,10 +139,8 @@ export default function MigrationPage() {
       {/* SUCCESS */}
       {status === "success" && (
         <div className="grid grid-cols-3 gap-4">
-
           {/* TABLE */}
           <div className="col-span-2 bg-white p-4 rounded-xl shadow-sm">
-
             <table className="w-full text-sm">
               <thead className="bg-primary text-white rounded-tl-xl rounded-tr-xl">
                 <tr>
@@ -162,7 +154,6 @@ export default function MigrationPage() {
               <tbody>
                 {data.map((item) => (
                   <tr key={item.id} className="border-t">
-
                     {/* Checkbox */}
                     <td className="p-2 text-center">
                       <input
@@ -184,7 +175,6 @@ export default function MigrationPage() {
                         Detail
                       </button>
                     </td>
-
                   </tr>
                 ))}
               </tbody>
@@ -192,16 +182,12 @@ export default function MigrationPage() {
 
             {/* RUN BUTTON */}
             <div className="mt-4 text-right">
-              <Button
-                label="Run migration"
-                disabled={selected.length === 0}
-              />
+              <Button label="Run migration" disabled={selected.length === 0} />
             </div>
           </div>
 
           {/* DETAIL PANEL */}
           <div className="bg-white p-4 rounded-xl shadow-sm">
-
             {!detail && (
               <p className="text-text-light text-sm">
                 Pilih migration untuk melihat detail
@@ -210,9 +196,7 @@ export default function MigrationPage() {
 
             {detail && (
               <>
-                <h3 className="font-semibold mb-2">
-                  Migration Detail
-                </h3>
+                <h3 className="font-semibold mb-2">Migration Detail</h3>
 
                 <p className="text-sm">
                   <b>Batch:</b> {detail.batch}
@@ -231,16 +215,11 @@ export default function MigrationPage() {
                 </pre>
 
                 <div className="mt-4 text-right">
-                  <Button
-                    label="Close"
-                    onClick={() => setDetail(null)}
-                  />
+                  <Button label="Close" onClick={() => setDetail(null)} />
                 </div>
               </>
             )}
-
           </div>
-
         </div>
       )}
     </div>

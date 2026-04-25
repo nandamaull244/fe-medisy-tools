@@ -20,21 +20,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className="h-[85%] px-4 bg-background">
-          <Header />
+      <body className="h-full px-4 bg-background">
+        <Header />
 
         <div className="flex h-full">
-          
-          
-
           {/* Content */}
-            {/* Sidebar */}
-             <Sidebar />
+          {/* Sidebar */}
+          <Sidebar />
 
-            <main className="w-full overflow-auto ml-3 ">
-              {children}
-            </main>
-
+          <main className="w-full h-full  ml-3 ">{children}</main>
         </div>
       </body>
     </html>
