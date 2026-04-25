@@ -39,7 +39,7 @@ export default function ComparePage() {
   }, []);
 
   useEffect(() => {
-    getFaskes({ size: 100 }) // ambil banyak dulu
+    getFaskes({ size: 100 })
       .then((res) => {
         const mapped = res.map((item: any) => ({
           label: item.name,
@@ -53,7 +53,6 @@ export default function ComparePage() {
       });
   }, []);
   const handleCompare = async () => {
-    // console.log("tombol diklik");
     if (!faskesA || !faskesB) {
       alert("Pilih kedua faskes terlebih dahulu");
       return;
@@ -71,28 +70,17 @@ export default function ComparePage() {
 
       console.log("COMPARE RESULT:", res);
 
-      // mapping hasil API ke format UI
-      // const keys = Object.keys(res).filter((k) => k !== "columnDifferences");
-      // const tablesA = keys[0];
-      // const tablesB = keys[1];
-      const nameA = faskesA.label;
-      const nameB = faskesB.label;
+      // AMBIL KEY DARI RESPONSE
+      const tablesOnlyA = res.tablesOnlyA || [];
+      const tablesOnlyB = res.tablesOnlyB || [];
+      const tablesSame = res.tablesSame || [];
 
-      const listA = res[nameA] || [];
-      const listB = res[nameB] || [];
-
-      const tablesSame = listA.filter((t: string) => listB.includes(t));
-
-      const tablesOnlyA = listA.filter((t: string) => !listB.includes(t));
-
-      const tablesOnlyB = listB.filter((t: string) => !listA.includes(t));
-      console.log("NAME A:", nameA);
-      console.log("NAME B:", nameB);
-      console.log("LIST A:", listA.length);
-      console.log("LIST B:", listB.length);
+      console.log("KEY A:", Object.keys(res).includes("tablesOnlyA"));
+      console.log("KEY B:", Object.keys(res).includes("tablesOnlyB"));
+      console.log("LIST A:", tablesOnlyA.length);
+      console.log("LIST B:", tablesOnlyB.length);
       console.log("SAME:", tablesSame.length);
 
-      //FILTER columnDifferences
       const filteredColumnDiff = Object.fromEntries(
         Object.entries(res.columnDifferences || {}).filter(([table]) =>
           tablesSame.includes(table),
@@ -103,7 +91,7 @@ export default function ComparePage() {
         tablesOnlyA,
         tablesOnlyB,
         tablesSame,
-        columnDifferences: filteredColumnDiff || {},
+        columnDifferences: res.columnDifferences || {},
       });
 
       setStatus("success");
@@ -196,7 +184,12 @@ export default function ComparePage() {
         <div className="bg-background p-6 rounded-xl shadow-sm text-center">
           <p className="text-red-500 mb-3">Data gagal compare</p>
 
-          <Button label="Coba Lagi" onClick={handleCompare} />
+          <button
+            onClick={handleCompare}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:opacity-90"
+          >
+            coba lagi
+          </button>
         </div>
       )}
 
@@ -260,18 +253,17 @@ export default function ComparePage() {
                     </span>
                   ))}
                 </div>
-
-                {result.tablesSame.length === 0 ? (
-                  <div className="hidden"></div>
-                ) : (
-                  result.tablesSame.map((t: string) => (
-                    <div key={`Both-${t}`}>
-                      <span className="px-3 py-1 border bg-white border-green-400 rounded-lg text-sm columns-1 inline-block mb-2">
-                        {t}
-                      </span>
-                    </div>
-                  ))
-                )}
+                <div>
+                  <p>Kesamaan table:</p>
+                  {result.tablesSame.map((t: string) => (
+                    <span
+                      key={t}
+                      className="px-3 py-1 border bg-white border-green-400 rounded-lg text-sm columns-1 inline-block mb-2"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -308,8 +300,8 @@ export default function ComparePage() {
                 <thead className="bg-primary text-white">
                   <tr>
                     <th className="p-2 text-left">Column</th>
-                    <th className="p-2">Faskes A</th>
-                    <th className="p-2">Faskes B</th>
+                    <th className="p-2">{faskesA.label}</th>
+                    <th className="p-2">{faskesB.label}</th>
                   </tr>
                 </thead>
 
