@@ -5,10 +5,14 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { compareFaskes } from "@/services/compare.service";
 import { getFaskes } from "@/services/faskes.service";
+import Alert from "@/components/ui/Alert";
+import { useSearchParams } from "next/navigation";
 
 export default function ComparePage() {
   const [faskesA, setFaskesA] = useState<any>(null);
   const [faskesB, setFaskesB] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const faskesAId = searchParams.get("faskesA");
 
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -17,6 +21,10 @@ export default function ComparePage() {
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     [],
   );
+  const [alert, setAlert] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const [result, setResult] = useState<any>(null);
   const [selectedTable, setSelectedTable] = useState<string>("User");
@@ -52,34 +60,41 @@ export default function ComparePage() {
         console.error("Gagal ambil faskes", err);
       });
   }, []);
+  useEffect(() => {
+    if (!faskesAId || options.length === 0) return;
+
+    const found = options.find((o) => o.value === faskesAId);
+
+    if (found) {
+      setFaskesA(found);
+    }
+  }, [faskesAId, options]);
   const handleCompare = async () => {
     if (!faskesA || !faskesB) {
-      alert("Pilih kedua faskes terlebih dahulu");
+      setAlert({
+        message: "Pilih kedua faskes terlebih dahulu",
+        type: "error",
+      });
       return;
     }
 
     if (faskesA.value === faskesB.value) {
-      alert("Tidak boleh memilih faskes yang sama");
+      setAlert({
+        message: "Tidak boleh memilih faskes yang sama",
+        type: "error",
+      });
       return;
     }
 
     setStatus("loading");
+    setAlert(null);
 
     try {
       const res = await compareFaskes(faskesA.value, faskesB.value);
 
-      console.log("COMPARE RESULT:", res);
-
-      // AMBIL KEY DARI RESPONSE
       const tablesOnlyA = res.tablesOnlyA || [];
       const tablesOnlyB = res.tablesOnlyB || [];
       const tablesSame = res.tablesSame || [];
-
-      console.log("KEY A:", Object.keys(res).includes("tablesOnlyA"));
-      console.log("KEY B:", Object.keys(res).includes("tablesOnlyB"));
-      console.log("LIST A:", tablesOnlyA.length);
-      console.log("LIST B:", tablesOnlyB.length);
-      console.log("SAME:", tablesSame.length);
 
       const filteredColumnDiff = Object.fromEntries(
         Object.entries(res.columnDifferences || {}).filter(([table]) =>
@@ -91,13 +106,26 @@ export default function ComparePage() {
         tablesOnlyA,
         tablesOnlyB,
         tablesSame,
-        columnDifferences: res.columnDifferences || {},
+        columnDifferences: filteredColumnDiff || {},
       });
 
       setStatus("success");
-    } catch (err) {
+
+      // SUCCESS ALERT
+      setAlert({
+        message: "Berhasil membandingkan database",
+        type: "success",
+      });
+    } catch (err: any) {
       console.error(err);
+
       setStatus("error");
+
+      setAlert({
+        message:
+          err?.response?.data?.message || "Gagal melakukan compare database",
+        type: "error",
+      });
     }
   };
 
@@ -166,6 +194,13 @@ export default function ComparePage() {
           )}
           {status === "loading" ? "Comparing..." : "Compare"}
         </button>
+        {alert && (
+          <Alert
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
       </div>
 
       {/* ================= */}

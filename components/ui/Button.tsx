@@ -29,7 +29,7 @@ export default function Button({
   return (
     <button
       type={type}
-      // onClick={onClick}
+      onClick={onClick}
       disabled={disabled}
       className={`${baseStyle} ${variants[variant]} ${
         disabled ? "opacity-50 cursor-not-allowed" : ""

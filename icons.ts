@@ -12,8 +12,8 @@ import {
   ArrowLeftIcon,
   ArrowDown,
   XCircle,
-  CheckCircle2Icon
-
+  CheckCircle2Icon,
+  Play as runMigration,
 } from "lucide-react";
 
 export const Icons = {
@@ -30,4 +30,5 @@ export const Icons = {
   arrow_left: ArrowLeftIcon,
   close: XCircle,
   check: CheckCircle2Icon,
+  runMigration: runMigration,
 };

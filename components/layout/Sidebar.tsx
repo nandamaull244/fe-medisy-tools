@@ -27,6 +27,16 @@ export default function Sidebar() {
       href: "/migration",
       icon: <Icons.migration size={20} />,
     },
+    {
+      name: "Run Migration",
+      href: "/run-migration",
+      icon: <Icons.runMigration size={20} />,
+    },
+    {
+      name: "Update Version",
+      href: "/version",
+      icon: <Icons.edit size={20} />,
+    },
   ];
 
   return (
@@ -34,9 +44,9 @@ export default function Sidebar() {
       <nav className="space-y-2">
         {menu.map((item) => {
           const isActive =
-          item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
+            item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href);
 
           return (
             <a
