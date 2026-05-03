@@ -36,3 +36,8 @@ export const updateVersion = async (data: {
   const res = await api.put("/v2/image-version", data);
   return res.data;
 };
+
+export const updateMigration = async (id: number, data: any) => {
+  const res = await api.put(`/v1/migrations/${id}`, data);
+  return res.data;
+};

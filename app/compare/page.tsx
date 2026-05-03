@@ -248,9 +248,9 @@ export default function ComparePage() {
                 {result.tablesOnlyB.length} tabel hanya di Faskes{" "}
                 {faskesB.label}
               </p>
-              <p className="text-sm text-text-light">
+              {/* <p className="text-sm text-text-light">
                 {result.tablesSame.length} tabel sama di kedua Faskes
-              </p>
+              </p> */}
 
               <p className="text-sm text-text-light">
                 {Object.keys(result.columnDifferences).length} tabel memiliki
@@ -262,7 +262,7 @@ export default function ComparePage() {
             <div className="bg-background p-5 rounded-xl shadow-sm col-span-2">
               <h3 className="font-semibold mb-3">Table Differences</h3>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p>Hanya ada di : </p>
                   <p className="font-medium pb-2">{faskesA.label}</p>
@@ -288,7 +288,7 @@ export default function ComparePage() {
                     </span>
                   ))}
                 </div>
-                <div>
+                {/* <div>
                   <p>Kesamaan table:</p>
                   {result.tablesSame.map((t: string) => (
                     <span
@@ -298,7 +298,7 @@ export default function ComparePage() {
                       {t}
                     </span>
                   ))}
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -334,9 +334,9 @@ export default function ComparePage() {
               <table className="w-full text-sm">
                 <thead className="bg-primary text-white">
                   <tr>
-                    <th className="p-2 text-left">Column</th>
-                    <th className="p-2">{faskesA.label}</th>
-                    <th className="p-2">{faskesB.label}</th>
+                    <th className="p-2 text-center">Column</th>
+                    <th className="p-2 text-center">{faskesA.label}</th>
+                    <th className="p-2 text-center">{faskesB.label}</th>
                   </tr>
                 </thead>
 
@@ -354,20 +354,20 @@ export default function ComparePage() {
                     const isInB = colB.includes(column);
 
                     return (
-                      <tr key={column} className="border-t">
+                      <tr key={column} className="border">
                         {/* Nama column */}
-                        <td className="p-2">{column}</td>
+                        <td className="p-2 text-center">{column}</td>
 
                         {/* Faskes A */}
                         <td
-                          className={`p-2 ${isInA ? "text-green-500" : "text-red-500"}`}
+                          className={`p-2 text-center ${isInA ? "text-green-500" : "text-red-500"}`}
                         >
                           {isInA ? "available" : "unavailable"}
                         </td>
 
                         {/* Faskes B */}
                         <td
-                          className={`p-2 ${isInB ? "text-green-500" : "text-red-500"}`}
+                          className={`p-2 text-center ${isInB ? "text-green-500" : "text-red-500"}`}
                         >
                           {isInB ? "available" : "unavailable"}
                         </td>
