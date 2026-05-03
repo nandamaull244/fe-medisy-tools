@@ -5,10 +5,14 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { compareFaskes } from "@/services/compare.service";
 import { getFaskes } from "@/services/faskes.service";
+import Alert from "@/components/ui/Alert";
+import { useSearchParams } from "next/navigation";
 
 export default function ComparePage() {
   const [faskesA, setFaskesA] = useState<any>(null);
   const [faskesB, setFaskesB] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const faskesAId = searchParams.get("faskesA");
 
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -17,6 +21,10 @@ export default function ComparePage() {
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     [],
   );
+  const [alert, setAlert] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const [result, setResult] = useState<any>(null);
   const [selectedTable, setSelectedTable] = useState<string>("User");
@@ -52,34 +60,41 @@ export default function ComparePage() {
         console.error("Gagal ambil faskes", err);
       });
   }, []);
+  useEffect(() => {
+    if (!faskesAId || options.length === 0) return;
+
+    const found = options.find((o) => o.value === faskesAId);
+
+    if (found) {
+      setFaskesA(found);
+    }
+  }, [faskesAId, options]);
   const handleCompare = async () => {
     if (!faskesA || !faskesB) {
-      alert("Pilih kedua faskes terlebih dahulu");
+      setAlert({
+        message: "Pilih kedua faskes terlebih dahulu",
+        type: "error",
+      });
       return;
     }
 
     if (faskesA.value === faskesB.value) {
-      alert("Tidak boleh memilih faskes yang sama");
+      setAlert({
+        message: "Tidak boleh memilih faskes yang sama",
+        type: "error",
+      });
       return;
     }
 
     setStatus("loading");
+    setAlert(null);
 
     try {
       const res = await compareFaskes(faskesA.value, faskesB.value);
 
-      console.log("COMPARE RESULT:", res);
-
-      // AMBIL KEY DARI RESPONSE
       const tablesOnlyA = res.tablesOnlyA || [];
       const tablesOnlyB = res.tablesOnlyB || [];
       const tablesSame = res.tablesSame || [];
-
-      console.log("KEY A:", Object.keys(res).includes("tablesOnlyA"));
-      console.log("KEY B:", Object.keys(res).includes("tablesOnlyB"));
-      console.log("LIST A:", tablesOnlyA.length);
-      console.log("LIST B:", tablesOnlyB.length);
-      console.log("SAME:", tablesSame.length);
 
       const filteredColumnDiff = Object.fromEntries(
         Object.entries(res.columnDifferences || {}).filter(([table]) =>
@@ -91,13 +106,26 @@ export default function ComparePage() {
         tablesOnlyA,
         tablesOnlyB,
         tablesSame,
-        columnDifferences: res.columnDifferences || {},
+        columnDifferences: filteredColumnDiff || {},
       });
 
       setStatus("success");
-    } catch (err) {
+
+      // SUCCESS ALERT
+      setAlert({
+        message: "Berhasil membandingkan database",
+        type: "success",
+      });
+    } catch (err: any) {
       console.error(err);
+
       setStatus("error");
+
+      setAlert({
+        message:
+          err?.response?.data?.message || "Gagal melakukan compare database",
+        type: "error",
+      });
     }
   };
 
@@ -166,6 +194,13 @@ export default function ComparePage() {
           )}
           {status === "loading" ? "Comparing..." : "Compare"}
         </button>
+        {alert && (
+          <Alert
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
       </div>
 
       {/* ================= */}
@@ -213,9 +248,9 @@ export default function ComparePage() {
                 {result.tablesOnlyB.length} tabel hanya di Faskes{" "}
                 {faskesB.label}
               </p>
-              <p className="text-sm text-text-light">
+              {/* <p className="text-sm text-text-light">
                 {result.tablesSame.length} tabel sama di kedua Faskes
-              </p>
+              </p> */}
 
               <p className="text-sm text-text-light">
                 {Object.keys(result.columnDifferences).length} tabel memiliki
@@ -227,7 +262,7 @@ export default function ComparePage() {
             <div className="bg-background p-5 rounded-xl shadow-sm col-span-2">
               <h3 className="font-semibold mb-3">Table Differences</h3>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p>Hanya ada di : </p>
                   <p className="font-medium pb-2">{faskesA.label}</p>
@@ -253,7 +288,7 @@ export default function ComparePage() {
                     </span>
                   ))}
                 </div>
-                <div>
+                {/* <div>
                   <p>Kesamaan table:</p>
                   {result.tablesSame.map((t: string) => (
                     <span
@@ -263,7 +298,7 @@ export default function ComparePage() {
                       {t}
                     </span>
                   ))}
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -299,9 +334,9 @@ export default function ComparePage() {
               <table className="w-full text-sm">
                 <thead className="bg-primary text-white">
                   <tr>
-                    <th className="p-2 text-left">Column</th>
-                    <th className="p-2">{faskesA.label}</th>
-                    <th className="p-2">{faskesB.label}</th>
+                    <th className="p-2 text-center">Column</th>
+                    <th className="p-2 text-center">{faskesA.label}</th>
+                    <th className="p-2 text-center">{faskesB.label}</th>
                   </tr>
                 </thead>
 
@@ -319,20 +354,20 @@ export default function ComparePage() {
                     const isInB = colB.includes(column);
 
                     return (
-                      <tr key={column} className="border-t">
+                      <tr key={column} className="border">
                         {/* Nama column */}
-                        <td className="p-2">{column}</td>
+                        <td className="p-2 text-center">{column}</td>
 
                         {/* Faskes A */}
                         <td
-                          className={`p-2 ${isInA ? "text-green-500" : "text-red-500"}`}
+                          className={`p-2 text-center ${isInA ? "text-green-500" : "text-red-500"}`}
                         >
                           {isInA ? "available" : "unavailable"}
                         </td>
 
                         {/* Faskes B */}
                         <td
-                          className={`p-2 ${isInB ? "text-green-500" : "text-red-500"}`}
+                          className={`p-2 text-center ${isInB ? "text-green-500" : "text-red-500"}`}
                         >
                           {isInB ? "available" : "unavailable"}
                         </td>

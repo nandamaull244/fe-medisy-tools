@@ -1,227 +1,382 @@
 "use client";
 
-import { useState } from "react";
-import Select from "@/components/ui/Select";
-import Button from "@/components/ui/Button";
+import { useEffect, useState } from "react";
+import Input from "@/components/ui/Input";
+import Table from "@/components/ui/Table";
+import {
+  getMigrations,
+  createMigration,
+  deleteMigration,
+  updateMigration,
+} from "@/services/migration.service";
 
 export default function MigrationPage() {
-  const [faskes, setFaskes] = useState<any>(null);
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "empty" | "success" | "error"
-  >("idle");
+  const [batch, setBatch] = useState("");
+  const [sqlList, setSqlList] = useState<string[]>([""]);
 
+  const [filterBatch, setFilterBatch] = useState("");
   const [data, setData] = useState<any[]>([]);
-  const [selected, setSelected] = useState<number[]>([]);
-  const [detail, setDetail] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<any>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
 
-  const options = [
-    { label: "Klinik Bunda", value: "1" },
-    { label: "Klinik Maju Terus", value: "2" },
-    { label: "Klinik Keluarga Sehat", value: "3" },
-  ];
+  // FETCH
+  const fetchData = async () => {
+    try {
+      const res = await getMigrations({
+        size: 50,
+        batch: filterBatch || undefined,
+      });
+      setData(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  const handleLoad = async () => {
-    if (!faskes) {
-      alert("Pilih faskes terlebih dahulu");
+  useEffect(() => {
+    fetchData();
+  }, [filterBatch]);
+
+  // ADD SQL
+  const addSql = () => {
+    setSqlList((prev) => [...prev, ""]);
+  };
+
+  // REMOVE SQL
+  const removeSql = (index: number) => {
+    setSqlList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // UPDATE SQL
+  const updateSql = (index: number, value: string) => {
+    const copy = [...sqlList];
+    copy[index] = value;
+    setSqlList(copy);
+  };
+
+  // CREATE BATCH
+  const handleCreateBatch = async () => {
+    if (!batch) {
+      alert("Batch wajib diisi");
       return;
     }
 
-    setStatus("loading");
-    setDetail(null);
-    setSelected([]);
+    const validSql = sqlList.filter((sql) => sql.trim() !== "");
+
+    if (validSql.length === 0) {
+      alert("Minimal 1 SQL harus diisi");
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      await new Promise((res) => setTimeout(res, 1000));
+      await Promise.all(
+        validSql.map((sql) =>
+          createMigration({
+            batch,
+            sqlcode: sql,
+          }),
+        ),
+      );
 
-      //dummy data
-      const dummy = [
-        {
-          id: 1,
-          batch: "v1.0",
-          note: "add email column",
-          created_at: "2024-03-31 10:29",
-          sqlcode: "ALTER TABLE user ADD email VARCHAR(255);",
-        },
-        {
-          id: 2,
-          batch: "v1.0",
-          note: "create patients table",
-          created_at: "2024-03-31 10:29",
-          sqlcode: "CREATE TABLE patients (...);",
-        },
-        {
-          id: 3,
-          batch: "v1.1",
-          note: "add phone column",
-          created_at: "2024-03-31 10:29",
-          sqlcode: "ALTER TABLE user ADD phone VARCHAR(20);",
-        },
-      ];
+      alert("Batch berhasil dibuat");
 
-      if (dummy.length === 0) {
-        setStatus("empty");
-      } else {
-        setData(dummy);
-        setStatus("success");
-      }
+      setBatch("");
+      setSqlList([""]);
+
+      fetchData();
     } catch (err) {
-      setStatus("error");
+      console.error(err);
+      alert("Gagal create batch");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleSelect = (id: number) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
+  //GROUPING
+  const groupByBatch = (list: any[]) => {
+    const map: any = {};
+
+    list.forEach((item) => {
+      if (!map[item.batch]) {
+        map[item.batch] = {
+          batch: item.batch,
+          items: [],
+          created_at: item.created_at,
+        };
+      }
+
+      map[item.batch].items.push(item);
+    });
+
+    return Object.values(map);
   };
 
-  return (
-    <div className="space-y-6 w-full h-full bg-white rounded-xl shadow-sm p-4">
-      {/* HEADER */}
-      <div>
-        <h1 className="text-xl font-semibold">Migration</h1>
-        <p className="text-sm text-text-light">
-          Jalankan migration ke database faskes
-        </p>
-      </div>
+  //FORMAT TANGGAL
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    return d.toLocaleString("id-ID", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-      {/* SELECT */}
-      <div className="flex gap-4 items-end">
-        <Select
-          label="Pilih Faskes"
-          options={options}
-          value={faskes?.value}
-          onChange={(val) => {
-            const selected = options.find((o) => o.value === val);
-            setFaskes(selected);
-          }}
+  // DELETE
+  const handleDeleteMigration = async (id: number) => {
+    if (!confirm("Hapus migration ini?")) return;
+
+    try {
+      await deleteMigration(id);
+
+      await fetchData();
+
+      setSelectedBatch((prev: any) => {
+        if (!prev) return prev;
+
+        const newItems = prev.items.filter((item: any) => item.id !== id);
+
+        if (newItems.length === 0) {
+          return null;
+        }
+
+        return {
+          ...prev,
+          items: newItems,
+        };
+      });
+    } catch (err) {
+      alert("Gagal delete");
+    }
+  };
+  //EDIT
+  const handleEdit = (item: any) => {
+    setEditingId(item.id);
+    setEditValue(item.sqlcode);
+  };
+
+  const handleSaveEdit = async (id: number) => {
+    try {
+      await updateMigration(id, {
+        sqlcode: editValue,
+      });
+
+      setEditingId(null);
+
+      await fetchData();
+
+      setSelectedBatch((prev: any) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          items: prev.items.map((item: any) =>
+            item.id === id ? { ...item, sqlcode: editValue } : item,
+          ),
+        };
+      });
+    } catch (err) {
+      alert("Gagal update");
+    }
+  };
+
+  const columns = [
+    {
+      accessorKey: "batch",
+      header: "Batch",
+    },
+    {
+      accessorKey: "items",
+      header: "Total SQL",
+      cell: ({ row }: any) => row.original.items.length,
+    },
+    {
+      accessorKey: "created_at",
+      header: "Created",
+      cell: ({ row }: any) => formatDate(row.original.created_at),
+    },
+    {
+      accessorKey: "action",
+      header: "Action",
+      cell: ({ row }: any) => (
+        <button
+          onClick={() => setSelectedBatch(row.original)}
+          className="text-primary"
+        >
+          Detail
+        </button>
+      ),
+    },
+  ];
+  const groupedData = groupByBatch(data);
+
+  return (
+    <div className="space-y-6">
+      {/* CREATE BATCH */}
+      <div className="bg-white p-6 rounded-xl shadow-sm">
+        <h2 className="font-semibold mb-4">Create Batch Migration</h2>
+
+        <Input
+          label="Batch Version"
+          placeholder="v1.3"
+          value={batch}
+          onChange={(e) => setBatch(e.target.value)}
         />
 
-        <button
-          className="bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark"
-          onClick={handleLoad}
-          disabled={status === "loading"}
-        >
-          {status === "loading" ? "Loading..." : "Pilih"}
-        </button>
+        {/* SQL LIST */}
+        <div className="space-y-3 mt-4">
+          {sqlList.map((sql, index) => (
+            <div key={index} className="flex gap-2">
+              <textarea
+                value={sql}
+                onChange={(e) => updateSql(index, e.target.value)}
+                className="w-full border p-3 rounded"
+                placeholder={`SQL ${index + 1}`}
+              />
+
+              {sqlList.length > 1 && (
+                <button
+                  onClick={() => removeSql(index)}
+                  className="text-red-500 px-2"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ACTION */}
+        <div className="flex gap-3 mt-4">
+          <button onClick={addSql} className="px-3 py-2 bg-gray-light rounded">
+            + Add SQL
+          </button>
+
+          <button
+            onClick={handleCreateBatch}
+            className="px-4 py-2 bg-primary text-white rounded"
+          >
+            {loading ? "Saving..." : "Create Batch"}
+          </button>
+        </div>
       </div>
 
-      {/* ========================= */}
-      {/* STATE UI */}
-      {/* ========================= */}
+      {/* FILTER */}
+      <div className="bg-white p-4 rounded-xl shadow-sm">
+        <Input
+          label="Filter Batch"
+          placeholder="v1.1"
+          value={filterBatch}
+          onChange={(e) => setFilterBatch(e.target.value)}
+        />
+      </div>
 
-      {/* IDLE */}
-      {status === "idle" && (
-        <div className="text-text-light">
-          Pilih faskes untuk melihat migration
-        </div>
-      )}
+      {/* TABLE */}
+      <div className="bg-white p-6 rounded-xl shadow-sm">
+        <Table columns={columns} data={groupedData} />
+        {selectedBatch && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white w-[80%] max-h-[80%] overflow-y-auto rounded-xl p-6 shadow-lg">
+              {/* HEADER */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">
+                  Batch: {selectedBatch.batch}
+                </h2>
 
-      {/* LOADING */}
-      {status === "loading" && (
-        <div className="text-text-light">Memuat data migration...</div>
-      )}
+                <button
+                  onClick={() => setSelectedBatch(null)}
+                  className="text-gray-500"
+                >
+                  ✕
+                </button>
+              </div>
 
-      {/* EMPTY */}
-      {status === "empty" && (
-        <div className="text-center text-text-light">no data available yet</div>
-      )}
+              {/* INFO */}
+              <p className="text-sm text-gray-500 mb-4">
+                Total SQL: {selectedBatch.items.length}
+              </p>
 
-      {/* ERROR */}
-      {status === "error" && (
-        <div className="bg-white p-6 rounded-xl shadow-sm text-center">
-          <p className="text-red-500 mb-3">Data gagal compare</p>
+              {/* SQL LIST */}
+              <div className="space-y-3">
+                {selectedBatch.items.map((item: any, index: number) => (
+                  <div
+                    key={item.id}
+                    className="bg-gray-100 p-3 rounded-lg font-mono text-sm"
+                  >
+                    {/* HEADER */}
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-xs text-gray-400">SQL #{index + 1}</p>
 
-          <Button label="Coba Lagi" onClick={handleLoad} />
-        </div>
-      )}
+                      <div className="flex gap-2">
+                        {/* COPY */}
+                        <button
+                          onClick={() =>
+                            navigator.clipboard.writeText(item.sqlcode)
+                          }
+                          className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-200"
+                        >
+                          Copy
+                        </button>
 
-      {/* SUCCESS */}
-      {status === "success" && (
-        <div className="grid grid-cols-3 gap-4">
-          {/* TABLE */}
-          <div className="col-span-2 bg-white p-4 rounded-xl shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-primary text-white rounded-tl-xl rounded-tr-xl">
-                <tr>
-                  <th className="p-2"></th>
-                  <th className="p-2 text-left">Batch</th>
-                  <th className="p-2 text-left">Created At</th>
-                  <th className="p-2 text-left">Action</th>
-                </tr>
-              </thead>
+                        {/* EDIT */}
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="text-xs px-2 py-1 bg-blue-500 text-white rounded"
+                        >
+                          Edit
+                        </button>
 
-              <tbody>
-                {data.map((item) => (
-                  <tr key={item.id} className="border-t">
-                    {/* Checkbox */}
-                    <td className="p-2 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(item.id)}
-                        onChange={() => toggleSelect(item.id)}
-                      />
-                    </td>
+                        {/* DELETE */}
+                        <button
+                          onClick={() => handleDeleteMigration(item.id)}
+                          className="text-xs px-2 py-1 bg-red-500 text-white rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
 
-                    <td className="p-2">{item.batch}</td>
-                    <td className="p-2">{item.created_at}</td>
+                    {/* CONTENT */}
+                    {editingId === item.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="w-full border p-2 rounded"
+                        />
 
-                    {/* Detail */}
-                    <td className="p-2">
-                      <button
-                        className="text-primary text-sm"
-                        onClick={() => setDetail(item)}
-                      >
-                        Detail
-                      </button>
-                    </td>
-                  </tr>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSaveEdit(item.id)}
+                            className="px-3 py-1 bg-green-500 text-white rounded"
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="px-3 py-1 bg-gray-300 rounded"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <pre className="whitespace-pre-wrap wrap-break-word">
+                        {item.sqlcode}
+                      </pre>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
-
-            {/* RUN BUTTON */}
-            <div className="mt-4 text-right">
-              <Button label="Run migration" disabled={selected.length === 0} />
+              </div>
             </div>
           </div>
-
-          {/* DETAIL PANEL */}
-          <div className="bg-white p-4 rounded-xl shadow-sm">
-            {!detail && (
-              <p className="text-text-light text-sm">
-                Pilih migration untuk melihat detail
-              </p>
-            )}
-
-            {detail && (
-              <>
-                <h3 className="font-semibold mb-2">Migration Detail</h3>
-
-                <p className="text-sm">
-                  <b>Batch:</b> {detail.batch}
-                </p>
-
-                <p className="text-sm">
-                  <b>Note:</b> {detail.note}
-                </p>
-
-                <p className="text-sm mt-2">
-                  <b>SQL:</b>
-                </p>
-
-                <pre className="bg-gray-light p-2 rounded text-xs mt-1">
-                  {detail.sqlcode}
-                </pre>
-
-                <div className="mt-4 text-right">
-                  <Button label="Close" onClick={() => setDetail(null)} />
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

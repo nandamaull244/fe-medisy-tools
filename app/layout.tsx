@@ -20,6 +20,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
+      <head>
+        <link rel="icon" href="/icon_fav.png" />
+      </head>
       <body className="h-full px-4 bg-background">
         <Header />
 
