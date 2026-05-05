@@ -23,6 +23,9 @@ export default function FaskesForm({
     password: defaultValues?.password || "",
     dbhost: defaultValues?.dbhost || "",
     dbname: defaultValues?.dbname || "",
+    dbport: defaultValues?.dbport || "",
+    dbuser: defaultValues?.dbuser || "",
+    dbpassword: defaultValues?.dbpassword || "",
     image_version: defaultValues?.image_version || "",
     dockerfile_path: defaultValues?.dockerfile_path || "",
     use_pem_file: defaultValues?.use_pem_file || false,
@@ -43,7 +46,7 @@ export default function FaskesForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div className="column w-[45%] ">
           {/* Nama */}
           <Input
@@ -77,17 +80,6 @@ export default function FaskesForm({
             value={form.password}
             onChange={(e) => handleChange("password", e.target.value)}
           />
-          <br />
-          {
-            /* Use PEM File */
-            <Switch
-              label="Use PEM File"
-              checked={form.use_pem_file}
-              onChange={(value) => handleChange("use_pem_file", value)}
-            />
-          }
-        </div>
-        <div className="column w-[45%]">
           {/* Image Version */}
           <Input
             label="Image Version"
@@ -103,7 +95,17 @@ export default function FaskesForm({
             value={form.dockerfile_path}
             onChange={(e) => handleChange("dockerfile_path", e.target.value)}
           />
-
+          <br />
+          {
+            /* Use PEM File */
+            <Switch
+              label="Use PEM File"
+              checked={form.use_pem_file}
+              onChange={(value) => handleChange("use_pem_file", value)}
+            />
+          }
+        </div>
+        <div className="column w-[45%]">
           {/* DB Host */}
           <Input
             label="DB Host"
@@ -118,6 +120,28 @@ export default function FaskesForm({
             placeholder="nama_database"
             value={form.dbname}
             onChange={(e) => handleChange("dbname", e.target.value)}
+          />
+          {/* DB Port */}
+          <Input
+            label="DB Port"
+            placeholder="3306"
+            value={form.dbport}
+            onChange={(e) => handleChange("dbport", e.target.value)}
+          />
+          {/* DB User */}
+          <Input
+            label="DB User"
+            placeholder="root"
+            value={form.dbuser}
+            onChange={(e) => handleChange("dbuser", e.target.value)}
+          />
+          {/* DB Password */}
+          <Input
+            label="DB Password"
+            type="password"
+            placeholder="••••••"
+            value={form.dbpassword}
+            onChange={(e) => handleChange("dbpassword", e.target.value)}
           />
           <br />
           <Switch
