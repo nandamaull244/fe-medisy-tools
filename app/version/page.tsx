@@ -98,17 +98,58 @@ export default function VersionPage() {
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        {options.slice(0, 20).map((f: any) => (
-          <div key={f.id}>
-            <input
-              type="checkbox"
-              checked={selected.includes(f.id)}
-              onChange={() => toggle(f.id)}
-            />
-            {f.name}
-          </div>
-        ))}
+      <div className="border border-gray-200 rounded-xl overflow-hidden mt-4">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-primary">
+              <th className="text-left py-3 px-4 text-white font-semibold border border-primary">
+                No
+              </th>
+              <th className="text-left py-3 px-4 text-white font-semibold border border-primary w-full">
+                Nama Faskes
+              </th>
+              <th className="py-3 px-4 text-center border border-primary">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 cursor-pointer accent-white"
+                  checked={
+                    selected.length === options.length && options.length > 0
+                  }
+                  onChange={(e) =>
+                    setSelected(
+                      e.target.checked ? options.map((f) => f.id) : [],
+                    )
+                  }
+                />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {options.slice(0, 20).map((f: any, i: number) => (
+              <tr
+                key={f.id}
+                className="border-b border-gray-200 last:border-0 hover:bg-orange-50 transition-colors cursor-pointer"
+                onClick={() => toggle(f.id)}
+              >
+                <td className="py-2.5 px-4 text-gray-400 text-xs border border-gray-200">
+                  {i + 1}
+                </td>
+                <td className="py-2.5 px-4 text-gray-700 border border-gray-200">
+                  {f.name}
+                </td>
+                <td className="py-2.5 px-4 text-center border border-gray-200">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 cursor-pointer accent-orange-500"
+                    checked={selected.includes(f.id)}
+                    onChange={() => toggle(f.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       <Button
         onClick={handleUpdate}
