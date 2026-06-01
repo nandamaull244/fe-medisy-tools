@@ -21,16 +21,14 @@ export default function RunMigrationPage() {
   const [loadingRun, setLoadingRun] = useState(false);
   const searchParams = useSearchParams();
   const faskesId = searchParams.get("faskes");
-  const [sqlList, setSqlList] = useState<string[]>([""]);
-  const [batch, setBatch] = useState("");
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
+  const [searchBatch, setSearchBatch] = useState("");
 
   const [alert, setAlert] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
 
-  const [message, setMessage] = useState("");
   // GET FASKES
   useEffect(() => {
     getFaskes({ size: 100 }).then((res) => {
@@ -42,6 +40,7 @@ export default function RunMigrationPage() {
       );
     });
   }, []);
+
   useEffect(() => {
     if (!faskesId || options.length === 0) return;
 
@@ -64,26 +63,7 @@ export default function RunMigrationPage() {
     );
   };
 
-  //GROUPING
-  const groupByBatch = (list: any[]) => {
-    const map: any = {};
-
-    list.forEach((item) => {
-      if (!map[item.batch]) {
-        map[item.batch] = {
-          batch: item.batch,
-          items: [],
-          created_at: item.created_at,
-        };
-      }
-
-      map[item.batch].items.push(item);
-    });
-
-    return Object.values(map);
-  };
-
-  //FORMAT TANGGAL
+  // FORMAT TANGGAL
   const formatDate = (date: string) => {
     const d = new Date(date);
     return d.toLocaleString("id-ID", {
@@ -95,42 +75,33 @@ export default function RunMigrationPage() {
     });
   };
 
+  // FILTER DATA BERDASARKAN SEARCH BATCH
+  const filteredData = data.filter((item) =>
+    item.batch?.toLowerCase().includes(searchBatch.toLowerCase()),
+  );
+
   const columns = [
     {
       accessorKey: "id",
       header: "",
-      cell: ({ row }: any) => {
-        const ids = row.original.items.map((x: any) => x.id);
-
-        const isChecked = ids.every((id: number) => selected.includes(id));
-
-        return (
-          <input
-            type="checkbox"
-            checked={isChecked}
-            onChange={() => {
-              setSelected((prev) => {
-                if (isChecked) {
-                  // remove semua
-                  return prev.filter((id) => !ids.includes(id));
-                } else {
-                  // add semua
-                  return [...new Set([...prev, ...ids])];
-                }
-              });
-            }}
-          />
-        );
-      },
+      cell: ({ row }: any) => (
+        <input
+          type="checkbox"
+          checked={selected.includes(row.original.id)}
+          onChange={() => toggleSelect(row.original.id)}
+        />
+      ),
     },
     {
       accessorKey: "batch",
       header: "Batch",
     },
     {
-      accessorKey: "items",
-      header: "Total SQL",
-      cell: ({ row }: any) => row.original.items.length,
+      accessorKey: "sqlcode",
+      header: "SQL",
+      cell: ({ row }: any) => (
+        <p className="truncate max-w-md">{row.original.sqlcode}</p>
+      ),
     },
     {
       accessorKey: "created_at",
@@ -150,11 +121,10 @@ export default function RunMigrationPage() {
       ),
     },
   ];
-  const groupedData = groupByBatch(data);
 
   return (
     <div className="space-y-6 w-full h-[110%] bg-white rounded-xl shadow-sm p-4">
-      {/* SELECT */}
+      {/* SELECT FASKES */}
       <div className="flex gap-4">
         <Select
           options={options}
@@ -173,9 +143,22 @@ export default function RunMigrationPage() {
         </button>
       </div>
 
-      {/*modal*/}
+      {/* TABLE */}
       <div className="bg-white p-6 rounded-xl shadow-sm">
-        <Table columns={columns} data={groupedData} />
+        {/* SEARCH BATCH */}
+        <div className="flex justify-between items-center mb-4">
+          <input
+            type="text"
+            placeholder="Search batch..."
+            value={searchBatch}
+            onChange={(e) => setSearchBatch(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 w-72"
+          />
+        </div>
+
+        <Table columns={columns} data={filteredData} />
+
+        {/* MODAL DETAIL */}
         {selectedBatch && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div className="bg-white w-[80%] max-h-[80%] overflow-y-auto rounded-xl p-6 shadow-lg">
@@ -187,7 +170,7 @@ export default function RunMigrationPage() {
 
                 <button
                   onClick={() => setSelectedBatch(null)}
-                  className="text-gray-500"
+                  className="text-gray-500 hover:text-gray-700"
                 >
                   ✕
                 </button>
@@ -195,43 +178,34 @@ export default function RunMigrationPage() {
 
               {/* INFO */}
               <p className="text-sm text-gray-500 mb-4">
-                Total SQL: {selectedBatch.items.length}
+                Migration ID: {selectedBatch.id}
               </p>
 
-              {/* SQL LIST */}
-              <div className="space-y-3">
-                {selectedBatch.items.map((item: any, index: number) => (
-                  <div
-                    key={item.id}
-                    className="bg-gray-100 p-3 rounded-lg font-mono text-sm"
+              {/* SQL */}
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-xs text-gray-400">SQL Migration</p>
+
+                  <button
+                    onClick={() =>
+                      navigator.clipboard.writeText(selectedBatch.sqlcode)
+                    }
+                    className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-200"
                   >
-                    {/* HEADER */}
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-xs text-gray-400">SQL #{index + 1}</p>
+                    Copy
+                  </button>
+                </div>
 
-                      <button
-                        onClick={() =>
-                          navigator.clipboard.writeText(item.sqlcode)
-                        }
-                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-200"
-                      >
-                        Copy
-                      </button>
-                    </div>
-
-                    {/* SQL CONTENT */}
-                    <pre className="whitespace-pre-wrap wrap-break-word">
-                      {item.sqlcode}
-                    </pre>
-                  </div>
-                ))}
+                <pre className="whitespace-pre-wrap break-words text-sm font-mono">
+                  {selectedBatch.sqlcode}
+                </pre>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* RUN */}
+      {/* RUN MIGRATION */}
       <button
         onClick={async () => {
           setLoadingRun(true);
@@ -275,6 +249,7 @@ export default function RunMigrationPage() {
       >
         {loadingRun ? "Running..." : "Run Migration"}
       </button>
+
       {alert && (
         <Alert
           message={alert.message}

@@ -190,9 +190,11 @@ export default function MigrationPage() {
       header: "Batch",
     },
     {
-      accessorKey: "items",
-      header: "Total SQL",
-      cell: ({ row }: any) => row.original.items.length,
+      accessorKey: "sqlcode",
+      header: "SQL Code",
+      cell: ({ row }: any) => (
+        <p className="truncate max-w-md">{row.original.sqlcode}</p>
+      ),
     },
     {
       accessorKey: "created_at",
@@ -212,7 +214,7 @@ export default function MigrationPage() {
       ),
     },
   ];
-  const groupedData = groupByBatch(data);
+  // const groupedData = groupByBatch(data);
 
   return (
     <div className="space-y-6">
@@ -268,7 +270,7 @@ export default function MigrationPage() {
       {/* FILTER */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <Input
-          label="Filter Batch"
+          label="Search Batch"
           placeholder="v1.1"
           value={filterBatch}
           onChange={(e) => setFilterBatch(e.target.value)}
@@ -277,7 +279,7 @@ export default function MigrationPage() {
 
       {/* TABLE */}
       <div className="bg-white p-6 rounded-xl shadow-sm">
-        <Table columns={columns} data={groupedData} />
+        <Table columns={columns} data={data} />
         {selectedBatch && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div className="bg-white w-[80%] max-h-[80%] overflow-y-auto rounded-xl p-6 shadow-lg">
@@ -297,81 +299,77 @@ export default function MigrationPage() {
 
               {/* INFO */}
               <p className="text-sm text-gray-500 mb-4">
-                Total SQL: {selectedBatch.items.length}
+                Batch: {selectedBatch.batch}
               </p>
 
               {/* SQL LIST */}
+              {/* SQL DETAIL */}
               <div className="space-y-3">
-                {selectedBatch.items.map((item: any, index: number) => (
-                  <div
-                    key={item.id}
-                    className="bg-gray-100 p-3 rounded-lg font-mono text-sm"
-                  >
-                    {/* HEADER */}
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-xs text-gray-400">SQL #{index + 1}</p>
+                <div className="bg-gray-100 p-3 rounded-lg font-mono text-sm">
+                  {/* HEADER */}
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs text-gray-400">SQL Migration</p>
+
+                    <div className="flex gap-2">
+                      {/* COPY */}
+                      <button
+                        onClick={() =>
+                          navigator.clipboard.writeText(selectedBatch.sqlcode)
+                        }
+                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-200"
+                      >
+                        Copy
+                      </button>
+
+                      {/* EDIT */}
+                      <button
+                        onClick={() => handleEdit(selectedBatch)}
+                        className="text-xs px-2 py-1 bg-blue-500 text-white rounded"
+                      >
+                        Edit
+                      </button>
+
+                      {/* DELETE */}
+                      <button
+                        onClick={() => handleDeleteMigration(selectedBatch.id)}
+                        className="text-xs px-2 py-1 bg-red-500 text-white rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CONTENT */}
+                  {editingId === selectedBatch.id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="w-full border p-2 rounded min-h-[150px]"
+                      />
 
                       <div className="flex gap-2">
-                        {/* COPY */}
                         <button
-                          onClick={() =>
-                            navigator.clipboard.writeText(item.sqlcode)
-                          }
-                          className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-200"
+                          onClick={() => handleSaveEdit(selectedBatch.id)}
+                          className="px-3 py-1 bg-green-500 text-white rounded"
                         >
-                          Copy
+                          Save
                         </button>
 
-                        {/* EDIT */}
                         <button
-                          onClick={() => handleEdit(item)}
-                          className="text-xs px-2 py-1 bg-blue-500 text-white rounded"
+                          onClick={() => setEditingId(null)}
+                          className="px-3 py-1 bg-gray-300 rounded"
                         >
-                          Edit
-                        </button>
-
-                        {/* DELETE */}
-                        <button
-                          onClick={() => handleDeleteMigration(item.id)}
-                          className="text-xs px-2 py-1 bg-red-500 text-white rounded"
-                        >
-                          Delete
+                          Cancel
                         </button>
                       </div>
                     </div>
-
-                    {/* CONTENT */}
-                    {editingId === item.id ? (
-                      <div className="space-y-2">
-                        <textarea
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          className="w-full border p-2 rounded"
-                        />
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleSaveEdit(item.id)}
-                            className="px-3 py-1 bg-green-500 text-white rounded"
-                          >
-                            Save
-                          </button>
-
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="px-3 py-1 bg-gray-300 rounded"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <pre className="whitespace-pre-wrap wrap-break-word">
-                        {item.sqlcode}
-                      </pre>
-                    )}
-                  </div>
-                ))}
+                  ) : (
+                    <pre className="whitespace-pre-wrap break-words">
+                      {selectedBatch.sqlcode}
+                    </pre>
+                  )}
+                </div>
               </div>
             </div>
           </div>
