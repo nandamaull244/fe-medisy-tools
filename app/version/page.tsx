@@ -11,6 +11,11 @@ export default function VersionPage() {
   const [selected, setSelected] = useState<number[]>([]);
   const [version, setVersion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = options.filter((f) =>
+    f.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   const [alert, setAlert] = useState<{
     message: string;
@@ -90,12 +95,23 @@ export default function VersionPage() {
       <div>
         <h1 className="text-xl font-semibold">Update Version</h1>
         <p className="text-sm text-text-light">Update version untuk faskes</p>
-        <input
-          placeholder="Version (v1.2)"
-          value={version}
-          onChange={(e) => setVersion(e.target.value)}
-          className="border mt-4 p-2 rounded-lg w-[25%]"
-        />
+        <div className="flex gap-3 mt-4">
+          <input
+            placeholder="Version (v1.2)"
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
+            className="border p-2 rounded-lg w-[25%]"
+          />
+          <div className="relative flex-1">
+            <input
+              placeholder="Cari nama faskes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border p-2 pl-8 rounded-lg w-full"
+            />
+            <span className="absolute left-2.5 top-2.5 text-gray-400">🔍</span>
+          </div>
+        </div>
       </div>
 
       <div className="border border-gray-200 rounded-xl overflow-hidden mt-4">
@@ -125,7 +141,7 @@ export default function VersionPage() {
             </tr>
           </thead>
           <tbody>
-            {options.slice(0, 20).map((f: any, i: number) => (
+            {filteredOptions.map((f: any, i: number) => (
               <tr
                 key={f.id}
                 className="border-b border-gray-200 last:border-0 hover:bg-orange-50 transition-colors cursor-pointer"
@@ -141,8 +157,17 @@ export default function VersionPage() {
                   <input
                     type="checkbox"
                     className="w-5 h-5 cursor-pointer accent-orange-500"
-                    checked={selected.includes(f.id)}
-                    onChange={() => toggle(f.id)}
+                    checked={
+                      filteredOptions.length > 0 &&
+                      filteredOptions.every((f) => selected.includes(f.id))
+                    }
+                    onChange={(e) =>
+                      setSelected(
+                        e.target.checked
+                          ? filteredOptions.map((f) => f.id)
+                          : [],
+                      )
+                    }
                     onClick={(e) => e.stopPropagation()}
                   />
                 </td>
